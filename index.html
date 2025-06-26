@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Grattage Cashopoly</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@1,800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f8f8f8;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    #scratch-card {
+      position: relative;
+      width: 340px;
+      height: 200px;
+      border: 4px dashed #d4af37;
+      background: linear-gradient(145deg, #f9e79f, #f1c40f);
+      box-shadow: 0 0 20px rgba(212, 175, 55, 0.7);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #after {
+      position: absolute;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 1px;
+      text-align: center;
+      color: #6d4c00;
+    }
+
+    #after img {
+      width: 400px;
+    }
+
+    #after .title {
+      font-size: 18px;
+    }
+
+    #after .subtitle {
+      font-size: 14px;
+      font-style: italic;
+    }
+
+    canvas {
+      position: absolute;
+      z-index: 2;
+      top: 0;
+      left: 0;
+    }
+
+    @keyframes vibrate {
+      0% { transform: rotate(0deg); }
+      20% { transform: rotate(1deg); }
+      40% { transform: rotate(-1deg); }
+      60% { transform: rotate(1deg); }
+      80% { transform: rotate(-1deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    #scratch-card.attention {
+      animation: vibrate 0.3s infinite;
+    }
+
+.rdv-link {
+  text-decoration: none;
+  color: inherit;
+  font-style: italic;
+  font-weight: bold;
+  transition: all 0.2s ease-in-out;
+}
+
+.rdv-link:hover {
+  color: #b68f00;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-shadow: 0 0 6px rgba(212, 175, 55, 0.6);
+  cursor: pointer;
+}
+  </style>
+</head>
+<body>
+
+  <div id="scratch-card" class="attention">
+    <div id="after">
+      <img src="lachatte.png" alt="Cashopoly logo">
+
+<div class="subtitle">
+  <a href="https:www.google.fr" class="rdv-link">🎉 RDV Rue de La Paix 🎉</a>
+</div>
+    </div>
+    <canvas id="scratch" width="340" height="200"></canvas>
+  </div>
+
+  <audio id="success-audio" src="https://gfxsounds.com/wp-content/uploads/2024/08/Win-jingle-success-victory.mp3"></audio>
+
+  <script>
+    const canvas = document.getElementById('scratch');
+    const ctx = canvas.getContext('2d');
+    const scratchCard = document.getElementById('scratch-card');
+    const audio = document.getElementById('success-audio');
+
+    let isDrawing = false;
+    let revealed = false;
+
+    // Remplir la couche grise
+    ctx.fillStyle = '#cccccc';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Attendre que la police soit chargée avant d’écrire
+    document.fonts.ready.then(() => {
+      ctx.fillStyle = '#6d4c00';
+      ctx.textAlign = 'center';
+
+      ctx.font = 'bold 24px Montserrat';
+      ctx.fillText('🎲 Carte Chance N°1', canvas.width / 2, canvas.height / 2 - 10);
+
+      ctx.font = 'italic 800 16px Montserrat';
+      ctx.fillText('Gratte moi vite, stp !', canvas.width / 2, canvas.height / 2 + 20);
+    });
+
+    // Grattage
+    canvas.addEventListener('mousedown', () => {
+      isDrawing = true;
+      scratchCard.classList.remove('attention');
+    });
+
+    canvas.addEventListener('mouseup', () => isDrawing = false);
+    canvas.addEventListener('mousemove', scratch);
+    canvas.addEventListener('touchstart', () => isDrawing = true);
+    canvas.addEventListener('touchend', () => isDrawing = false);
+    canvas.addEventListener('touchmove', (e) => {
+      const touch = e.touches[0];
+      const mouseEvent = new MouseEvent("mousemove", {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+      });
+      canvas.dispatchEvent(mouseEvent);
+    });
+
+    function scratch(e) {
+      if (!isDrawing || revealed) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.arc(x, y, 22, 0, 2 * Math.PI);
+      ctx.fill();
+
+      if (getScratchedPercentage() > 35) {
+        revealed = true;
+        autoReveal();
+        audio.play();
+      }
+    }
+
+    function getScratchedPercentage() {
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const pixels = imageData.data;
+      let clearPixels = 0;
+
+      for (let i = 3; i < pixels.length; i += 4) {
+        if (pixels[i] === 0) clearPixels++;
+      }
+
+      const totalPixels = canvas.width * canvas.height;
+      return (clearPixels / totalPixels) * 100;
+    }
+
+    function autoReveal() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  </script>
+
+</body>
+</html>
